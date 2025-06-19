@@ -7,6 +7,7 @@ public class LoginController {
     private final ChatModel model;
     private final String serverIp;
     private final int serverPort;
+    private boolean authenticated = false;
 
     public LoginController(String serverIp, int serverPort) {
         this.serverIp = serverIp;
@@ -14,8 +15,16 @@ public class LoginController {
         this.model = new ChatModel();
         this.loginView = new LoginView();
 
+        // Listener für Login und Registrierung setzen
         loginView.setLoginListener(e -> handleLogin());
         loginView.setRegisterListener(e -> handleRegister());
+
+        // Verbindung zum Server herstellen + globaler Listener
+        try {
+            model.connect(serverIp, serverPort, this::handleServerMessage);
+        } catch (Exception ex) {
+            loginView.showMessage("Verbindung fehlgeschlagen: " + ex.getMessage());
+        }
 
         loginView.setVisible(true);
     }
@@ -29,20 +38,7 @@ public class LoginController {
             return;
         }
 
-        try {
-            model.connect(serverIp, serverPort, msg -> {
-                if (msg.equalsIgnoreCase("LOGIN_OK")) {
-                    openChat(username);
-                } else if (msg.startsWith("ERROR")) {
-                    loginView.showMessage("Login fehlgeschlagen: " + msg);
-                } else {
-                    // nach Login weitere Nachrichten an ChatView senden
-                }
-            });
-            model.sendLogin(username, password);
-        } catch (Exception ex) {
-            loginView.showMessage("Verbindung fehlgeschlagen: " + ex.getMessage());
-        }
+        model.sendLogin(username, password);
     }
 
     private void handleRegister() {
@@ -54,28 +50,33 @@ public class LoginController {
             return;
         }
 
-        try {
-            model.connect(serverIp, serverPort, msg -> {
-                if (msg.equalsIgnoreCase("REGISTER_OK")) {
-                    openChat(username);
-                } else if (msg.startsWith("ERROR")) {
-                    loginView.showMessage("Registrierung fehlgeschlagen: " + msg);
-                }
-            });
-            model.sendRegister(username, password);
-        } catch (Exception ex) {
-            loginView.showMessage("Verbindung fehlgeschlagen: " + ex.getMessage());
-        }
+        model.sendRegister(username, password);
     }
 
-    private void openChat(String username) {
+    private void handleServerMessage(String msg) {
         SwingUtilities.invokeLater(() -> {
-            ChatView chatView = new ChatView();
-            ChatController chatController = new ChatController(model, chatView);
-            chatView.appendMessage("Willkommen " + username + "!\n");
-            loginView.dispose();
+            if (msg.equalsIgnoreCase("LOGIN_OK") || msg.equalsIgnoreCase("REGISTER_OK")) {
+                if (!authenticated) {
+                    authenticated = true; // nur einmal
+                    openChat();
+                }
+            } else if (msg.startsWith("ERROR")) {
+                loginView.showMessage(msg);
+            } else if (authenticated) {
+                // reguläre Chat-Nachrichten nach Login
+                ChatController.forwardMessage(msg);
+            }
         });
     }
+
+    private void openChat() {
+        ChatView chatView = new ChatView();
+        ChatController chatController = new ChatController(model, chatView);
+        ChatController.setInstance(chatController); // zur Weiterleitung von Nachrichten
+        chatView.appendMessage("Willkommen im Chat!\n");
+        loginView.dispose();
+    }
 }
+
 
 

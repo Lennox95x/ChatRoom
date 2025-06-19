@@ -7,6 +7,7 @@ import java.awt.event.KeyListener;
 public class ChatController {
     private final ChatModel model;
     private final ChatView view;
+     private static ChatController instance;
 
     public ChatController(ChatModel model, ChatView view) { //Beide Objekte werden an den Controller übergeben damit der Controller die verbindung verwalten kann
         this.model = model;
@@ -14,6 +15,18 @@ public class ChatController {
         setupListeners();
         view.setVisible(true);
     }
+
+
+
+     public static void setInstance(ChatController controller) {
+         instance = controller;
+     }
+
+     public static void forwardMessage(String msg) {
+         if (instance != null && instance.view != null) {
+             instance.view.appendMessage(msg);
+         }
+     }
 
     public void setupListeners() {
         view.addKeyListener(new KeyListener() {
