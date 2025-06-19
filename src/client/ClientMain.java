@@ -8,12 +8,10 @@ public class ClientMain {
             String ip = JOptionPane.showInputDialog("IP-Adresse des Servers:");
             if (ip == null || ip.isEmpty()) return;
 
-            int port = 3141; // oder von Nutzer eingeben lassen
+            int port = 3141; // Optional auch abfragbar
 
-            ChatModel model = new ChatModel();
-            ChatView view = new ChatView();
-            ChatController controller = new ChatController(model, view);
-            controller.start(ip, port);
+            new LoginController(ip, port);
         });
     }
 }
+

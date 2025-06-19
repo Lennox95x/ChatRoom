@@ -1,17 +1,21 @@
 package client;
 
+import javax.swing.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import javax.swing.*;
-//schnittstelle zwischen Model und view
+ //Schnittstelle zwischen View und Model
 public class ChatController {
-    private ChatModel model;
-    private ChatView view;
+    private final ChatModel model;
+    private final ChatView view;
 
-    public ChatController(ChatModel model, ChatView view) { // beide Objekte werden an den Konstruktor übergeben
+    public ChatController(ChatModel model, ChatView view) { //Beide Objekte werden an den Controller übergeben damit der Controller die verbindung verwalten kann
         this.model = model;
         this.view = view;
+        setupListeners();
+        view.setVisible(true);
+    }
 
+    public void setupListeners() {
         view.addKeyListener(new KeyListener() {
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
@@ -22,19 +26,9 @@ public class ChatController {
                     }
                 }
             }
+
             public void keyReleased(KeyEvent e) {}
             public void keyTyped(KeyEvent e) {}
         });
-
-        view.setVisible(true);
-    }
-
-    public void start(String ip, int port) { // Aufbau für die Verbindung
-        try {
-            model.connect(ip, port, msg -> SwingUtilities.invokeLater(() -> view.appendMessage(msg)));
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Verbindung fehlgeschlagen: " + e.getMessage());
-            System.exit(1);
-        }
     }
 }
